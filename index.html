@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kubernetes к собеседованию</title>
+<style>
+:root{
+  --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efeb; --text:#1d1d1b; --muted:#5d5d58;
+  --border:#dedcd5; --accent:#2f5fd0; --accent-soft:#e7edfb; --ok:#1f7a4d; --ok-soft:#e3f3ea;
+  --warn:#9a5b00; --warn-soft:#fbf0dc; --bad:#b3261e; --bad-soft:#fbe6e4; --code:#f2f1ec;
+  --d-cp:#e7edfb; --d-node:#e3f3ea; --d-etcd:#fbf0dc; --d-line:#5d5d58;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151614; --surface:#1d1e1c; --surface-2:#262724; --text:#ecebe6; --muted:#a6a59e;
+    --border:#34352f; --accent:#8bb0ff; --accent-soft:#1f2a44; --ok:#6fd3a0; --ok-soft:#173326;
+    --warn:#f1c06b; --warn-soft:#3a2d14; --bad:#ff8a80; --bad-soft:#3d1c1a; --code:#23241f;
+    --d-cp:#1f2a44; --d-node:#173326; --d-etcd:#3a2d14; --d-line:#a6a59e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151614; --surface:#1d1e1c; --surface-2:#262724; --text:#ecebe6; --muted:#a6a59e;
+  --border:#34352f; --accent:#8bb0ff; --accent-soft:#1f2a44; --ok:#6fd3a0; --ok-soft:#173326;
+  --warn:#f1c06b; --warn-soft:#3a2d14; --bad:#ff8a80; --bad-soft:#3d1c1a; --code:#23241f;
+  --d-cp:#1f2a44; --d-node:#173326; --d-etcd:#3a2d14; --d-line:#a6a59e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+a{color:var(--accent)}
+code,pre{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em}
+code{background:var(--code);padding:.1em .35em;border-radius:4px}
+pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto;line-height:1.45;border:1px solid var(--border)}
+pre code{background:none;padding:0}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-right:1px solid var(--border)}
+nav.toc h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+nav.toc ol{list-style:none;padding:0;margin:0}
+nav.toc li a{display:flex;gap:8px;align-items:baseline;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--text);font-size:14px}
+nav.toc li a:hover{background:var(--surface-2)}
+nav.toc li a .n{color:var(--muted);font-variant-numeric:tabular-nums;min-width:22px}
+nav.toc li a.done .t{text-decoration:line-through;color:var(--muted)}
+.progress{margin:14px 0 18px;font-size:13px;color:var(--muted)}
+.bar{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.theme-btn{margin-top:16px;font-size:13px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer}
+main{padding:32px 40px 80px;min-width:0}
+header.hero h1{font-size:34px;line-height:1.2;margin:0 0 10px}
+header.hero p{color:var(--muted);margin:0 0 6px;max-width:760px}
+section.stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px 30px;margin:26px 0;scroll-margin-top:16px}
+section.stage>h2{margin:0 0 4px;font-size:25px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+section.stage>h2 .num{color:var(--accent);font-variant-numeric:tabular-nums}
+.why{color:var(--muted);margin:0 0 18px;font-size:15px}
+h3{font-size:19px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px}
+table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:14.5px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--surface-2)}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.bad{border-color:var(--bad);background:var(--bad-soft)}
+.callout b:first-child{display:block;margin-bottom:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:12px 0}
+.card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.card h4{margin:0 0 6px}
+details{border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin:8px 0;background:var(--surface)}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px}
+.scen summary::before{content:"❓ "}
+.stage-done{display:flex;gap:8px;align-items:center;margin-top:22px;padding-top:14px;border-top:1px dashed var(--border);font-size:14px;color:var(--muted)}
+.stage-done input{width:18px;height:18px}
+.diagram{width:100%;height:auto;margin:10px 0 18px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+.diagram text{fill:var(--text);font-family:inherit}
+.diagram .muted{fill:var(--muted)}
+.box-cp{fill:var(--d-cp);stroke:var(--accent)}
+.box-node{fill:var(--d-node);stroke:var(--ok)}
+.box-etcd{fill:var(--d-etcd);stroke:var(--warn)}
+.box-plain{fill:var(--surface-2);stroke:var(--border)}
+.ln{stroke:var(--d-line);stroke-width:1.5;fill:none}
+.ln-acc{stroke:var(--accent);stroke-width:2;fill:none}
+.arrowhead{fill:var(--d-line)}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps>li{counter-increment:s;position:relative;padding:6px 0 6px 40px}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:6px;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+.kbd{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:0 5px}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;background:var(--surface-2);color:var(--muted);font-weight:500}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  main{padding:20px 16px 60px}
+  section.stage{padding:18px 16px}
+  header.hero h1{font-size:27px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Оглавление">
+  <h2>Маршрут подготовки</h2>
+  <div class="progress"><span id="progText">Пройдено 0 из 0</span><div class="bar"><i id="progBar"></i></div></div>
+  <ol id="tocList"></ol>
+  <button class="theme-btn" id="themeBtn" type="button">Сменить тему</button>
+</nav>
+<main>
+<header class="hero">
+  <h1>Kubernetes к собеседованию: от сути до сценариев «что будет, если…»</h1>
+  <p>Этапы идут в порядке изучения. Каждый опирается на предыдущий. Сначала модель в голове (этапы 1–3), потом объекты и механики (4–11), затем распределённые свойства, отказы и отладка (12–15), в конце самопроверка.</p>
+  <p>Отмечайте пройденные этапы галочкой внизу каждого блока. Прогресс сохраняется в браузере.</p>
+</header>
+
+<!-- ===================== 1 ===================== -->
+<section class="stage" id="s1" data-title="Зачем нужен Kubernetes">
+<h2><span class="num">01</span> Зачем нужен Kubernetes</h2>
+<p class="why">Первый вопрос почти всегда «что это и зачем». Нужен короткий уверенный ответ.</p>
+
+<h3>Проблема, которую он решает</h3>
+<p>Контейнер упаковывает приложение со всеми зависимостями. Запустить один контейнер на одной машине просто: <code>docker run</code>. Сложности начинаются, когда сервисов десятки, машин сотни, и нужно:</p>
+<ul>
+  <li>решать, на какую машину поставить контейнер, чтобы хватило CPU и памяти;</li>
+  <li>перезапускать упавшее и переносить работу с умершей машины;</li>
+  <li>обновлять версии без простоя и откатывать неудачные;</li>
+  <li>дать сервисам находить друг друга, когда IP контейнеров постоянно меняются;</li>
+  <li>масштабироваться под нагрузку, подключать диски, раздавать конфиги и секреты.</li>
+</ul>
+<p>Kubernetes (K8s) — <b>оркестратор контейнеров</b>: платформа, которая превращает группу машин в один пул ресурсов и сама поддерживает приложения в описанном состоянии.</p>
+
+<h3>Главная идея: декларативность и цикл согласования</h3>
+<p>Вы не говорите «запусти 3 контейнера» (императивно). Вы записываете <b>желаемое состояние</b>: «должно быть 3 реплики образа <code>api:1.4</code>». Дальше <b>контроллеры</b> в бесконечном цикле сравнивают желаемое состояние с фактическим и устраняют разницу. Этот цикл называют reconciliation loop (цикл согласования, или control loop).</p>
+<pre><code>for {
+  desired := read(spec)     // что хотим
+  actual  := observe(world) // что есть
+  if diff(desired, actual) { act() }  // приблизить actual к desired
+}</code></pre>
+<div class="callout"><b>Почему это важно</b>Из этой идеи вытекает почти всё поведение Kubernetes: самовосстановление (под умер → разница → создать новый), идемпотентность (<code>kubectl apply</code> можно повторять), устойчивость к сбоям (контроллер перезапустился → перечитал состояние → продолжил). Система <b>level-triggered</b>: она реагирует на текущее состояние, а не на пропущенные события. Если контроллер пропустил событие, он всё равно увидит расхождение при следующем проходе.</div>
+
+<h3>Что Kubernetes делает, а что нет</h3>
+<div class="grid2">
+  <div class="card"><h4>Делает</h4>
+  <ul><li>Планирование контейнеров по узлам</li><li>Самовосстановление и перезапуски</li><li>Service discovery и балансировка</li><li>Rolling update и откат</li><li>Автомасштабирование</li><li>Подключение хранилищ</li><li>Конфиги и секреты</li><li>RBAC и изоляция по namespace</li></ul></div>
+  <div class="card"><h4>Не делает сам</h4>
+  <ul><li>Не собирает образы (это CI)</li><li>Не даёт готовый логинг и мониторинг</li><li>Не реализует сеть сам: это делает плагин CNI</li><li>Не реализует диски сам: это делает драйвер CSI</li><li>Не PaaS: нет «git push → прод» из коробки</li><li>Не делает stateful-приложение отказоустойчивым автоматически</li></ul></div>
+</div>
+
+<h3>Контейнер ≠ виртуальная машина</h3>
+<p>Контейнер — обычный процесс Linux, изолированный механизмами ядра:</p>
+<ul>
+  <li><b>namespaces</b> — что процесс <i>видит</i>: свои PID, сеть, mount, hostname, IPC, пользователи;</li>
+  <li><b>cgroups</b> — сколько процесс <i>может потребить</i>: CPU, память, I/O. На cgroups построены requests и limits в Kubernetes;</li>
+  <li>файловая система из слоёв образа (overlayfs).</li>
+</ul>
+<p>Ядро общее для всех контейнеров на узле. Поэтому контейнеры лёгкие, но изолированы слабее, чем ВМ.</p>
+
+<div class="callout ok"><b>Ответ на 30 секунд</b>«Kubernetes — платформа оркестрации контейнеров. Я декларативно описываю желаемое состояние в манифестах, API-сервер сохраняет его в etcd, а набор контроллеров постоянно приводит фактическое состояние кластера к желаемому: планирует поды на узлы, перезапускает упавшие, делает rolling update, балансирует трафик через Service, масштабирует. Всё взаимодействие идёт через API-сервер, а компоненты слабо связаны и общаются через watch на изменения объектов».</div>
+</section>
+
+<!-- ===================== 2 ===================== -->
+<section class="stage" id="s2" data-title="Архитектура кластера">
+<h2><span class="num">02</span> Архитектура кластера</h2>
+<p class="why">Самая важная часть. Нужно уметь нарисовать схему и рассказать роль каждого компонента.</p>
+
+<svg class="diagram" viewBox="0 0 900 470" role="img" aria-label="Схема архитектуры Kubernetes">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+  <rect x="20" y="20" width="860" height="190" rx="12" class="box-plain" stroke-width="1"/>
+  <text x="36" y="44" font-weight="700" font-size="15">Control plane (управляющий слой)</text>
+  <rect x="330" y="65" width="220" height="60" rx="8" class="box-cp" stroke-width="1.5"/>
+  <text x="440" y="92" text-anchor="middle" font-weight="700" font-size="15">kube-apiserver</text>
+  <text x="440" y="111" text-anchor="middle" font-size="12" class="muted">единственная точка входа</text>
+  <rect x="660" y="65" width="190" height="60" rx="8" class="box-etcd" stroke-width="1.5"/>
+  <text x="755" y="92" text-anchor="middle" font-weight="700" font-size="15">etcd</text>
+  <text x="755" y="111" text-anchor="middle" font-size="12" class="muted">хранилище состояния (Raft)</text>
+  <rect x="40" y="65" width="190" height="52" rx="8" class="box-cp" stroke-width="1.5"/>
+  <text x="135" y="88" text-anchor="middle" font-weight="700" font-size="14">kube-scheduler</text>
+  <text x="135" y="106" text-anchor="middle" font-size="12" class="muted">выбирает узел для пода</text>
+  <rect x="40" y="130" width="190" height="60" rx="8" class="box-cp" stroke-width="1.5"/>
+  <text x="135" y="153" text-anchor="middle" font-weight="700" font-size="14">controller-manager</text>
+  <text x="135" y="171" text-anchor="middle" font-size="12" class="muted">Deployment, Node, Job…</text>
+  <rect x="330" y="145" width="220" height="45" rx="8" class="box-cp" stroke-width="1.5"/>
+  <text x="440" y="172" text-anchor="middle" font-size="13">cloud-controller-manager</text>
+  <line x1="550" y1="95" x2="656" y2="95" class="ln-acc" marker-end="url(#ar)"/>
+  <line x1="232" y1="91" x2="326" y2="91" class="ln" marker-start="url(#ar)" marker-end="url(#ar)"/>
+  <line x1="232" y1="160" x2="326" y2="112" class="ln" marker-start="url(#ar)" marker-end="url(#ar)"/>
+  <line x1="440" y1="145" x2="440" y2="128" class="ln" marker-end="url(#ar)"/>
+  <text x="603" y="86" text-anchor="middle" font-size="11" class="muted">только он</text>
+
+  <rect x="20" y="260" width="415" height="190" rx="12" class="box-plain" stroke-width="1"/>
+  <text x="36" y="284" font-weight="700" font-size="15">Worker node 1</text>
+  <rect x="40" y="298" width="120" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="100" y="325" text-anchor="middle" font-weight="700" font-size="14">kubelet</text>
+  <rect x="172" y="298" width="120" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="232" y="325" text-anchor="middle" font-size="13">kube-proxy</text>
+  <rect x="304" y="298" width="114" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="361" y="318" text-anchor="middle" font-size="12">containerd</text>
+  <text x="361" y="334" text-anchor="middle" font-size="11" class="muted">(CRI)</text>
+  <rect x="40" y="356" width="110" height="78" rx="8" class="box-plain" stroke-width="1"/>
+  <text x="95" y="380" text-anchor="middle" font-size="13" font-weight="600">Pod</text>
+  <text x="95" y="400" text-anchor="middle" font-size="11" class="muted">app + sidecar</text>
+  <text x="95" y="416" text-anchor="middle" font-size="11" class="muted">IP 10.1.1.5</text>
+  <rect x="162" y="356" width="110" height="78" rx="8" class="box-plain" stroke-width="1"/>
+  <text x="217" y="380" text-anchor="middle" font-size="13" font-weight="600">Pod</text>
+  <text x="217" y="400" text-anchor="middle" font-size="11" class="muted">IP 10.1.1.6</text>
+  <text x="345" y="380" text-anchor="middle" font-size="12" class="muted">CNI: сеть подов</text>
+  <text x="345" y="400" text-anchor="middle" font-size="12" class="muted">CSI: диски</text>
+
+  <rect x="465" y="260" width="415" height="190" rx="12" class="box-plain" stroke-width="1"/>
+  <text x="481" y="284" font-weight="700" font-size="15">Worker node 2 … N</text>
+  <rect x="485" y="298" width="120" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="545" y="325" text-anchor="middle" font-weight="700" font-size="14">kubelet</text>
+  <rect x="617" y="298" width="120" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="677" y="325" text-anchor="middle" font-size="13">kube-proxy</text>
+  <rect x="749" y="298" width="114" height="44" rx="8" class="box-node" stroke-width="1.5"/>
+  <text x="806" y="325" text-anchor="middle" font-size="12">runtime</text>
+  <rect x="485" y="356" width="110" height="78" rx="8" class="box-plain" stroke-width="1"/>
+  <text x="540" y="400" text-anchor="middle" font-size="13" font-weight="600">Pod</text>
+
+  <line x1="100" y1="296" x2="380" y2="129" class="ln" marker-end="url(#ar)"/>
+  <line x1="545" y1="296" x2="470" y2="129" class="ln" marker-end="url(#ar)"/>
+  <text x="250" y="232" font-size="11" class="muted">watch / status</text>
+  <text x="520" y="232" font-size="11" class="muted">watch / status</text>
+</svg>
+
+<h3>Control plane</h3>
+<table>
+<tr><th>Компонент</th><th>Что делает</th><th>Важные детали</th></tr>
+<tr><td><b>kube-apiserver</b></td><td>REST API кластера. Принимает запросы, проводит аутентификацию, авторизацию и admission, валидирует и пишет объекты в etcd. Раздаёт watch-потоки изменений.</td><td>Без состояния, масштабируется горизонтально за балансировщиком. <b>Единственный компонент, который обращается к etcd.</b> Все остальные, включая kubelet и scheduler, общаются только с ним.</td></tr>
+<tr><td><b>etcd</b></td><td>Распределённое key-value хранилище. Здесь лежит всё состояние кластера: объекты, их spec и status.</td><td>Консенсус Raft, строгая согласованность. Кворум — большинство узлов. Обычно 3 или 5 членов. Потеря etcd без бэкапа означает потерю кластера.</td></tr>
+<tr><td><b>kube-scheduler</b></td><td>Находит поды без узла (<code>spec.nodeName</code> пуст) и выбирает для каждого узел.</td><td>Сам ничего не запускает. Только записывает привязку (binding) через API. Работает в два шага: фильтрация, затем оценка.</td></tr>
+<tr><td><b>kube-controller-manager</b></td><td>Один процесс, в котором крутятся десятки контроллеров: Deployment, ReplicaSet, StatefulSet, DaemonSet, Job, Node, EndpointSlice, Namespace, ServiceAccount, GC и другие.</td><td>При нескольких копиях активна одна: выбор лидера через объект Lease.</td></tr>
+<tr><td><b>cloud-controller-manager</b></td><td>Интеграция с облаком: создаёт балансировщики для <code>Service type=LoadBalancer</code>, узнаёт об удалении ВМ, настраивает маршруты.</td><td>В on-prem кластере его может не быть. Тогда LoadBalancer обеспечивает, например, MetalLB.</td></tr>
+</table>
+
+<h3>Worker node</h3>
+<table>
+<tr><th>Компонент</th><th>Что делает</th></tr>
+<tr><td><b>kubelet</b></td><td>Агент на каждом узле. Следит через watch за подами, назначенными на его узел, и запускает их через container runtime. Выполняет пробы, монтирует тома, отправляет статус подов и узла в API. Heartbeat узла — обновление объекта Lease в namespace <code>kube-node-lease</code> примерно каждые 10 секунд.</td></tr>
+<tr><td><b>container runtime</b></td><td>containerd или CRI-O. kubelet общается с ним по интерфейсу <b>CRI</b> (gRPC). Docker как runtime (dockershim) удалён в версии 1.24. Образы, собранные Docker, работают: это стандартные OCI-образы.</td></tr>
+<tr><td><b>kube-proxy</b></td><td>Реализует Service: программирует на узле правила iptables, IPVS или nftables, которые переводят виртуальный ClusterIP в IP реальных подов. Через себя трафик не пропускает. Некоторые CNI, например Cilium на eBPF, полностью заменяют kube-proxy.</td></tr>
+<tr><td><b>CNI-плагин</b></td><td>Calico, Cilium, Flannel и другие. Выдаёт поду IP и обеспечивает связность между узлами. Часто реализует NetworkPolicy.</td></tr>
+</table>
+
+<h3>Аддоны</h3>
+<p><b>CoreDNS</b> (DNS-имена сервисов), <b>metrics-server</b> (метрики для HPA и <code>kubectl top</code>), Ingress или Gateway-контроллер, CSI-драйверы.</p>
+
+<div class="callout"><b>Ключевой архитектурный принцип: hub-and-spoke</b>API-сервер в центре. Компоненты не вызывают друг друга напрямую. Scheduler не говорит kubelet «запусти под». Он записывает <code>nodeName</code> в объект Pod. kubelet через watch видит, что на его узел назначен под, и запускает его. Компоненты связаны только через общее состояние. Поэтому любой из них можно перезапустить, заменить или дописать свой (оператор), не трогая остальные.</div>
+</section>
+
+<!-- ===================== 3 ===================== -->
+<section class="stage" id="s3" data-title="Путь kubectl apply">
+<h2><span class="num">03</span> Что происходит после <code>kubectl apply</code></h2>
+<p class="why">Классический вопрос: «Опиши, что происходит от kubectl apply до запущенного контейнера». Он проверяет, что вы понимаете этапы 1 и 2 в связке.</p>
+
+<p>Применяем Deployment с <code>replicas: 3</code>:</p>
+<ol class="steps">
+  <li><b>kubectl</b> читает kubeconfig (адрес API, учётные данные), отправляет HTTPS-запрос в API-сервер. При <code>apply</code> вычисляется patch относительно текущего объекта. В современных версиях это обычно server-side apply с учётом владельцев полей (managedFields).</li>
+  <li><b>Аутентификация</b>: кто вы? Клиентский сертификат, bearer-токен, OIDC, токен ServiceAccount.</li>
+  <li><b>Авторизация</b>: можно ли вам выполнить <code>create deployments</code> в этом namespace? Обычно проверку выполняет RBAC.</li>
+  <li><b>Mutating admission</b>: плагины и вебхуки могут изменить объект. Например, проставить значения по умолчанию, внедрить sidecar (так делает Istio), добавить метки.</li>
+  <li><b>Валидация схемы</b>, затем <b>validating admission</b>: вебхуки и ValidatingAdmissionPolicy на CEL, Pod Security Admission, ResourceQuota. Здесь можно только отклонить запрос, но не изменить.</li>
+  <li><b>Запись в etcd</b>. Объект получает <code>resourceVersion</code>. Клиенту возвращается ответ. <b>На этом kubectl закончил работу</b>: дальше всё асинхронно.</li>
+  <li><b>Deployment controller</b> через watch видит новый Deployment и создаёт <b>ReplicaSet</b> с хешем шаблона пода в имени.</li>
+  <li><b>ReplicaSet controller</b> видит ReplicaSet с 3 желаемыми репликами и 0 фактическими, создаёт 3 объекта <b>Pod</b>. У подов пока нет <code>nodeName</code>, они в статусе <code>Pending</code>.</li>
+  <li><b>Scheduler</b> видит неназначенные поды. Для каждого фильтрует узлы, оценивает подходящие и записывает binding, то есть <code>nodeName</code>.</li>
+  <li><b>kubelet</b> на выбранном узле видит «свой» под. Через CRI создаёт pod sandbox (pause-контейнер, который держит сетевой namespace). CNI выдаёт IP. Подключаются тома (CSI), скачиваются образы, запускаются init-контейнеры, затем основные.</li>
+  <li>kubelet выполняет пробы и обновляет <code>status</code> пода: <code>Running</code>, затем <code>Ready</code>.</li>
+  <li><b>EndpointSlice controller</b> видит готовый под, подходящий под селектор Service, и добавляет его IP в EndpointSlice. <b>kube-proxy</b> на всех узлах обновляет правила. Под начинает получать трафик.</li>
+</ol>
+
+<h3>Механика, которая делает это надёжным</h3>
+<ul>
+  <li><b>Watch и informers.</b> Контроллеры не опрашивают API в цикле. Они один раз делают LIST, затем держат WATCH-поток изменений и локальный кеш. При разрыве переподключаются с последнего <code>resourceVersion</code>. Если история уже сжата (ошибка 410 Gone), делают LIST заново.</li>
+  <li><b>Оптимистичная блокировка.</b> Каждое обновление содержит <code>resourceVersion</code>. Если объект успел измениться, API вернёт <code>409 Conflict</code>, и клиент перечитает объект и повторит. Распределённых блокировок нет.</li>
+  <li><b>spec и status.</b> <code>spec</code> пишет пользователь (что хочу). <code>status</code> пишут контроллеры и kubelet (что есть). У status отдельный подресурс API.</li>
+  <li><b>ownerReferences и сборка мусора.</b> Pod принадлежит ReplicaSet, ReplicaSet принадлежит Deployment. При удалении Deployment сборщик мусора каскадно удаляет зависимые объекты.</li>
+</ul>
+<div class="callout warn"><b>Частая ошибка на собеседовании</b>Говорить, что «API-сервер отправляет команду kubelet запустить под» или что «scheduler запускает контейнер». Правильно: все пишут и читают объекты через API-сервер, а действуют, когда замечают изменения через watch. Исключения, когда API-сервер сам идёт в kubelet: <code>kubectl logs</code>, <code>exec</code>, <code>port-forward</code>.</div>
+</section>
+
+<!-- ===================== 4 ===================== -->
+<section class="stage" id="s4" data-title="Объекты и рабочие нагрузки">
+<h2><span class="num">04</span> Объекты и рабочие нагрузки</h2>
+<p class="why">Нужно знать, какой контроллер когда выбирать и чем они отличаются.</p>
+
+<h3>Анатомия любого объекта</h3>
+<pre><code>apiVersion: apps/v1          # группа/версия API
+kind: Deployment             # тип
+metadata:
+  name: api
+  namespace: shop
+  labels: { app: api, tier: backend }
+  annotations: { ... }       # произвольные данные, не для выборки
+spec: { ... }                # желаемое состояние
+status: { ... }              # фактическое состояние (пишет система)</code></pre>
+<ul>
+  <li><b>Labels и selectors</b> — основной способ связывания. Service находит поды по меткам. ReplicaSet считает «свои» поды по меткам. Это слабая связь: никаких жёстких ссылок по ID.</li>
+  <li><b>Namespace</b> — логическое разделение: имена, RBAC, квоты, NetworkPolicy. Это не граница безопасности сама по себе и не сетевая изоляция по умолчанию. Узлы, PV, ClusterRole, StorageClass не принадлежат namespace.</li>
+</ul>
+
+<h3>Pod — минимальная единица</h3>
+<p>Pod — один или несколько контейнеров с общей сетью (один IP, общий localhost, общие порты) и общими томами. Они всегда размещаются вместе на одном узле. Pod <b>эфемерен</b>: не «чинится» и не переезжает. Если под умер, контроллер создаёт новый, с новым именем и IP. Отдельные поды почти никогда не создают вручную.</p>
+
+<h3>Контроллеры рабочих нагрузок</h3>
+<table>
+<tr><th>Объект</th><th>Для чего</th><th>Ключевые свойства</th></tr>
+<tr><td><b>ReplicaSet</b></td><td>Держать N одинаковых подов</td><td>Напрямую почти не используется, им управляет Deployment</td></tr>
+<tr><td><b>Deployment</b></td><td>Stateless-сервисы</td><td>Управляет ReplicaSet: при смене шаблона создаёт новый RS и постепенно переводит реплики. Хранит историю для отката (<code>revisionHistoryLimit</code>). Поды взаимозаменяемы, имена случайные.</td></tr>
+<tr><td><b>StatefulSet</b></td><td>Базы, очереди, кластеры с идентичностью узлов</td><td>Стабильные имена (<code>db-0</code>, <code>db-1</code>), стабильные DNS-имена через headless Service, свой PVC на каждую реплику (<code>volumeClaimTemplates</code>). По умолчанию поды создаются и удаляются по порядку. Гарантирует, что одновременно существует не больше одного пода с данной идентичностью.</td></tr>
+<tr><td><b>DaemonSet</b></td><td>Один под на каждом (или выбранном) узле</td><td>Агенты логов и метрик, CNI, CSI-node. Новый узел получает под автоматически.</td></tr>
+<tr><td><b>Job</b></td><td>Задача до завершения</td><td><code>completions</code>, <code>parallelism</code>, <code>backoffLimit</code>, <code>activeDeadlineSeconds</code>. Под с <code>restartPolicy: OnFailure</code> или <code>Never</code>.</td></tr>
+<tr><td><b>CronJob</b></td><td>Job по расписанию</td><td><code>concurrencyPolicy</code>: Allow, Forbid или Replace. <code>startingDeadlineSeconds</code>. Кластер не гарантирует ровно один запуск: задача должна быть идемпотентной.</td></tr>
+</table>
+<div class="callout"><b>Deployment или StatefulSet?</b>Если реплики взаимозаменяемы и данные хранятся снаружи — Deployment. Если каждой реплике нужны своё постоянное имя и свой диск, а приложение само реплицирует данные (Postgres, Kafka, ZooKeeper) — StatefulSet. Сам StatefulSet не делает базу отказоустойчивой: репликацию и failover реализует приложение или оператор.</div>
+</section>
+
+<!-- ===================== 5 ===================== -->
+<section class="stage" id="s5" data-title="Жизненный цикл пода">
+<h2><span class="num">05</span> Жизненный цикл пода, пробы, завершение</h2>
+<p class="why">Здесь много вопросов «почему у меня теряются запросы при деплое» и «чем liveness отличается от readiness».</p>
+
+<h3>Фазы и состояния</h3>
+<p>Фаза пода: <code>Pending</code> (не назначен или скачивает образ) → <code>Running</code> → <code>Succeeded</code> или <code>Failed</code>. Также <code>Unknown</code>: нет связи с узлом. То, что показывает <code>kubectl get pods</code> в колонке STATUS (<code>CrashLoopBackOff</code>, <code>ImagePullBackOff</code>, <code>OOMKilled</code>), — это причины состояний контейнеров, а не фазы.</p>
+
+<h3>Состав пода</h3>
+<ul>
+  <li><b>Init-контейнеры</b> выполняются последовательно до старта основных. Каждый должен завершиться успешно. Примеры: дождаться БД, прогнать миграции, скачать конфиг.</li>
+  <li><b>Sidecar-контейнеры</b>: init-контейнер с <code>restartPolicy: Always</code>. Стабильны с версии 1.33. Стартуют до основных, работают всё время жизни пода и останавливаются после основных. Решают старую проблему, когда Job не завершался из-за работающего прокси-сайдкара.</li>
+  <li><b>pause-контейнер</b> (sandbox) держит сетевой namespace пода. Поэтому IP не меняется при перезапуске контейнеров внутри пода.</li>
+</ul>
+
+<h3>Пробы</h3>
+<table>
+<tr><th>Проба</th><th>При провале</th><th>Для чего</th></tr>
+<tr><td><b>startupProbe</b></td><td>Контейнер перезапускается после исчерпания попыток</td><td>Медленный старт. Пока проба не прошла, liveness и readiness не выполняются.</td></tr>
+<tr><td><b>livenessProbe</b></td><td><b>Контейнер перезапускается</b></td><td>Обнаружить зависание: deadlock, процесс жив, но не работает.</td></tr>
+<tr><td><b>readinessProbe</b></td><td><b>Под убирается из Endpoints</b>, перезапуска нет</td><td>Временно не принимать трафик: прогрев, перегрузка, недоступна зависимость.</td></tr>
+</table>
+<div class="callout bad"><b>Антипаттерн</b>Liveness-проба, которая проверяет базу данных. БД моргнула → все поды одновременно провалили liveness → массовый рестарт → холодный старт и шторм подключений → каскадный отказ. Liveness должна проверять только сам процесс. Зависимости можно учитывать в readiness, и то осторожно: если БД недоступна, все поды станут NotReady и сервис целиком пропадёт из балансировки.</div>
+
+<h3>restartPolicy и CrashLoopBackOff</h3>
+<p><code>Always</code> (по умолчанию, обязательно для Deployment), <code>OnFailure</code>, <code>Never</code>. Контейнер перезапускает <b>kubelet локально</b>, тот же под на том же узле. Задержка между рестартами растёт экспоненциально: 10 с, 20 с, 40 с и далее до 5 минут. Это и есть <code>CrashLoopBackOff</code>: контейнер стартует и падает, kubelet ждёт перед следующей попыткой.</p>
+
+<h3>Корректное завершение (graceful shutdown)</h3>
+<p>При удалении пода (деплой, scale down, drain) происходит следующее, <b>параллельно</b>:</p>
+<ol class="steps">
+  <li>Под получает <code>deletionTimestamp</code> и состояние Terminating.</li>
+  <li>Ветка А: EndpointSlice-контроллер убирает под из эндпоинтов, kube-proxy, Ingress-контроллеры и балансировщики обновляют правила. Это занимает время: на разных узлах по-разному.</li>
+  <li>Ветка Б: kubelet выполняет <code>preStop</code>-хук, затем отправляет <b>SIGTERM</b> процессу с PID 1 в контейнере.</li>
+  <li>Через <code>terminationGracePeriodSeconds</code> (по умолчанию 30 с, отсчёт включает preStop) — <b>SIGKILL</b>.</li>
+</ol>
+<div class="callout warn"><b>Почему теряются запросы при деплое</b>Ветки А и Б идут одновременно. Приложение получает SIGTERM и закрывается раньше, чем все узлы перестали слать на него трафик. Отсюда ошибки 502 и connection refused. Решение: <code>preStop: sleep 5–15</code>, чтобы дать время на распространение изменений; приложение должно корректно обрабатывать SIGTERM, дорабатывать текущие запросы и закрывать соединения. Ещё одна классика: shell-обёртка <code>sh -c "app"</code> на месте PID 1 не передаёт SIGTERM приложению, и через 30 секунд его убивает SIGKILL. Решение: <code>exec</code> в entrypoint или tini.</div>
+</section>
+
+<!-- ===================== 6 ===================== -->
+<section class="stage" id="s6" data-title="Ресурсы и планирование">
+<h2><span class="num">06</span> Ресурсы, QoS и планирование</h2>
+<p class="why">Здесь много практических вопросов: «почему под Pending», «почему OOMKilled», «почему тормозит при низкой загрузке CPU».</p>
+
+<h3>requests и limits</h3>
+<table>
+<tr><th></th><th>requests</th><th>limits</th></tr>
+<tr><td>Кто использует</td><td><b>Scheduler</b>: на узле должно быть свободно столько ресурсов по сумме requests. Также cgroup-веса CPU.</td><td><b>Ядро</b> через cgroups при работе</td></tr>
+<tr><td>CPU</td><td>Гарантированная доля при конкуренции</td><td>Превышение приводит к <b>троттлингу</b> (CFS quota). Процесс не убивают, он замедляется.</td></tr>
+<tr><td>Память</td><td>Учитывается при планировании и вытеснении</td><td>Превышение приводит к <b>OOMKilled</b> (exit code 137). Память нельзя «затроттлить».</td></tr>
+</table>
+<p>CPU измеряется в ядрах: <code>500m</code> — полъядра. Память — в байтах: <code>256Mi</code>. Scheduler смотрит на <b>requests</b>, а не на фактическое потребление. Узел может быть загружен на 10%, но если requests уже «раздали», новые поды туда не попадут.</p>
+
+<h3>Классы QoS</h3>
+<table>
+<tr><th>Класс</th><th>Условие</th><th>Судьба при нехватке памяти на узле</th></tr>
+<tr><td><b>Guaranteed</b></td><td>У всех контейнеров заданы requests = limits для CPU и памяти</td><td>Вытесняются последними</td></tr>
+<tr><td><b>Burstable</b></td><td>Что-то задано, но не Guaranteed</td><td>Посередине. Первыми те, кто сильнее превысил свои requests</td></tr>
+<tr><td><b>BestEffort</b></td><td>Ничего не задано</td><td>Вытесняются первыми</td></tr>
+</table>
+<div class="callout"><b>Два разных механизма, их часто путают</b><b>OOMKilled</b> — контейнер превысил свой лимит памяти, его убило ядро, kubelet перезапустит контейнер в том же поде. <b>Evicted</b> — на узле в целом закончились память, диск или PID. kubelet сам выселяет поды, чтобы спасти узел, и под пересоздаётся контроллером уже в другом месте.</div>
+<p>Распространённая практика: для памяти limit = request (предсказуемость). Для CPU многие не ставят limit или ставят с большим запасом, чтобы избежать троттлинга, особенно у многопоточных рантаймов (JVM, Go).</p>
+<p><b>LimitRange</b> задаёт значения по умолчанию и минимумы-максимумы для контейнеров в namespace. <b>ResourceQuota</b> ограничивает суммарное потребление namespace. Если в namespace есть квота на CPU или память, поды без requests будут отклонены.</p>
+<p>Изменение ресурсов без пересоздания пода (in-place resize) появилось в новых версиях. Классическая модель: изменение ресурсов в шаблоне Deployment приводит к пересозданию подов.</p>
+
+<h3>Как scheduler выбирает узел</h3>
+<ol class="steps">
+  <li><b>Фильтрация</b>: отбросить узлы, где не хватает ресурсов по requests, не совпадает nodeSelector или affinity, есть taint без toleration, заняты нужные hostPort, недоступен том (зона диска).</li>
+  <li><b>Оценка</b>: ранжировать оставшиеся. Учитываются равномерность загрузки, предпочтения affinity, распределение по зонам, наличие образа на узле.</li>
+  <li><b>Binding</b>: записать выбранный узел в под. Если подходящих узлов нет, под остаётся <code>Pending</code> с событием <code>FailedScheduling</code>. Тогда может сработать <b>preemption</b>: вытеснение подов с более низким <code>PriorityClass</code>.</li>
+</ol>
+
+<h3>Инструменты управления размещением</h3>
+<table>
+<tr><th>Механизм</th><th>Смысл</th></tr>
+<tr><td><code>nodeSelector</code></td><td>Простое «только на узлы с меткой X»</td></tr>
+<tr><td><b>nodeAffinity</b></td><td>То же, но с выражениями. <code>required…</code> — жёсткое условие, <code>preferred…</code> — пожелание</td></tr>
+<tr><td><b>podAffinity / podAntiAffinity</b></td><td>Размещать рядом с подами X или подальше от них. Анти-аффинити по <code>kubernetes.io/hostname</code> разносит реплики по разным узлам</td></tr>
+<tr><td><b>taints и tolerations</b></td><td>Taint на узле <b>отталкивает</b> поды. Toleration на поде <b>разрешает</b> встать на такой узел, но не притягивает. Эффекты: <code>NoSchedule</code>, <code>PreferNoSchedule</code>, <code>NoExecute</code> (выгоняет и уже работающие поды). Пример использования: выделенные GPU-узлы, control plane</td></tr>
+<tr><td><b>topologySpreadConstraints</b></td><td>Равномерно распределить реплики по зонам или узлам (<code>maxSkew</code>). Основной способ пережить отказ зоны</td></tr>
+<tr><td><b>PriorityClass</b></td><td>Приоритет при планировании и вытеснении</td></tr>
+</table>
+<div class="callout warn"><b>Taint и affinity — не одно и то же</b>Чтобы выделить узлы под одну команду, нужны оба механизма. Taint не пускает чужих. Toleration плюс nodeAffinity приводят своих именно туда. С одной только toleration под может уехать на любой обычный узел.</div>
+</section>
+
+<!-- ===================== 7 ===================== -->
+<section class="stage" id="s7" data-title="Сеть">
+<h2><span class="num">07</span> Сеть: модель, Service, DNS, Ingress</h2>
+<p class="why">Обязательная тема. Нужно понимать, где реально проходит пакет.</p>
+
+<h3>Сетевая модель Kubernetes: три правила</h3>
+<ol>
+  <li>У каждого пода свой IP.</li>
+  <li>Поды общаются с любыми подами на любых узлах <b>без NAT</b>.</li>
+  <li>Агенты узла, например kubelet, могут обращаться ко всем подам на этом узле.</li>
+</ol>
+<p>Kubernetes только задаёт требования. Реализует их CNI-плагин: через overlay (VXLAN, Geneve), через маршрутизацию (BGP в Calico) или через eBPF (Cilium).</p>
+
+<h3>Service: стабильный адрес для изменчивого набора подов</h3>
+<p>Поды умирают и меняют IP. Service даёт постоянное имя и виртуальный IP и выбирает поды по label selector. Контроллер поддерживает <b>EndpointSlice</b> — список IP готовых подов.</p>
+<table>
+<tr><th>Тип</th><th>Как работает</th></tr>
+<tr><td><b>ClusterIP</b> (по умолчанию)</td><td>Виртуальный IP, доступный только внутри кластера. <b>Ни один процесс не слушает этот IP.</b> kube-proxy на каждом узле прописал правила: пакет к ClusterIP:port заменяется (DNAT) на IP случайного готового пода. Поэтому ClusterIP не отвечает на ping.</td></tr>
+<tr><td><b>NodePort</b></td><td>ClusterIP плюс порт 30000–32767 на <b>каждом</b> узле</td></tr>
+<tr><td><b>LoadBalancer</b></td><td>NodePort плюс внешний балансировщик облака (создаёт cloud-controller-manager)</td></tr>
+<tr><td><b>Headless</b> (<code>clusterIP: None</code>)</td><td>Виртуального IP нет. DNS возвращает IP всех подов напрямую. Используется со StatefulSet: <code>db-0.db.ns.svc.cluster.local</code></td></tr>
+<tr><td><b>ExternalName</b></td><td>DNS CNAME на внешнее имя</td></tr>
+</table>
+
+<h3>Путь пакета: под A → Service → под B</h3>
+<ol class="steps">
+  <li>Приложение резолвит <code>payments</code>. Файл <code>/etc/resolv.conf</code> в поде содержит search-домены (<code>&lt;ns&gt;.svc.cluster.local</code> и другие) и указывает на CoreDNS. CoreDNS возвращает ClusterIP.</li>
+  <li>Пакет к ClusterIP перехватывается правилами iptables, IPVS или nftables <b>на узле отправителя</b> и получает DNAT на IP конкретного пода B.</li>
+  <li>CNI доставляет пакет до узла с подом B по маршрутизации или через overlay.</li>
+  <li>Ответ проходит обратное преобразование через conntrack.</li>
+</ol>
+<div class="callout"><b>Следствия</b>Балансировка происходит на уровне L4 при установке соединения, а не на уровне запросов. Долгоживущие соединения, например gRPC и HTTP/2, «прилипают» к одному поду, и нагрузка распределяется неравномерно. Для балансировки gRPC нужна клиентская балансировка через headless Service или service mesh. DNS-шаблон <code>ndots:5</code> вызывает лишние DNS-запросы к внешним именам: известный источник задержек.</div>
+
+<h3>Входящий трафик снаружи: Ingress и Gateway API</h3>
+<p><b>Ingress</b> — L7-маршрутизация HTTP по хосту и пути, TLS-терминация. Сам объект Ingress ничего не делает: нужен Ingress-контроллер (nginx, Traefik, HAProxy, облачный). Контроллер обычно стоит за Service типа LoadBalancer.</p>
+<p><b>Gateway API</b> — более новый стандарт и преемник Ingress. Разделяет роли: <code>GatewayClass</code> (инфраструктура), <code>Gateway</code> (точка входа, принадлежит платформенной команде), <code>HTTPRoute</code> или <code>GRPCRoute</code> (маршруты, принадлежат командам сервисов). Поддерживает разделение трафика по весам (канарейки), заголовки, разные протоколы. Сообщество выводит из поддержки популярный ingress-nginx, поэтому вопрос о миграции на Gateway API сейчас актуален.</p>
+
+<h3>NetworkPolicy</h3>
+<p>По умолчанию <b>все поды могут общаться со всеми</b>. NetworkPolicy — это файрвол на уровне подов (L3/L4) по меткам, namespace и CIDR. Как только под попал под политику типа Ingress, всё входящее, что явно не разрешено, запрещается. Разрешения складываются, явного «deny» в базовом API нет. <b>Политики работают, только если CNI их поддерживает</b>: с Flannel объекты создадутся, но ничего не будут делать. Типичный подход: default-deny в namespace плюс явные разрешения. Не забудьте разрешить egress на DNS (порт 53).</p>
+</section>
+
+<!-- ===================== 8 ===================== -->
+<section class="stage" id="s8" data-title="Хранилище">
+<h2><span class="num">08</span> Хранилище: Volume, PV, PVC, StorageClass</h2>
+<p class="why">Вопросы обычно о том, как данные переживают пересоздание пода и почему под не может подключить диск.</p>
+
+<p>Файловая система контейнера эфемерна: при рестарте контейнера всё, что записано вне томов, пропадает.</p>
+<table>
+<tr><th>Сущность</th><th>Смысл</th></tr>
+<tr><td><b>Volume</b> в поде</td><td>Живёт вместе с подом: <code>emptyDir</code> (временный, общий для контейнеров пода), <code>configMap</code>, <code>secret</code>, <code>projected</code>, <code>hostPath</code> (каталог узла, опасно)</td></tr>
+<tr><td><b>PersistentVolume (PV)</b></td><td>Реальный диск в кластере (EBS, Ceph RBD, NFS). Объект уровня кластера</td></tr>
+<tr><td><b>PersistentVolumeClaim (PVC)</b></td><td><b>Заявка</b> пода: «мне нужно 10Gi, RWO, класса fast». Объект namespace</td></tr>
+<tr><td><b>StorageClass</b></td><td>Шаблон для <b>динамического создания</b> PV: провижинер (CSI-драйвер), параметры, <code>reclaimPolicy</code>, <code>volumeBindingMode</code></td></tr>
+<tr><td><b>CSI</b></td><td>Стандартный интерфейс драйверов хранилища: создать, подключить к узлу, смонтировать, сделать снапшот, расширить</td></tr>
+</table>
+<p>Схема: под ссылается на PVC → PVC связывается с PV (существующим или созданным через StorageClass) → CSI подключает диск к узлу и монтирует в под.</p>
+<h4>Режимы доступа</h4>
+<ul>
+  <li><b>RWO</b> (ReadWriteOnce) — чтение и запись с <b>одного узла</b>. Блочные диски: EBS, GCE PD.</li>
+  <li><b>ROX</b> — чтение с многих узлов. <b>RWX</b> — запись с многих узлов, нужен NFS или CephFS. <b>RWOP</b> — строго один под.</li>
+</ul>
+<h4>Важные детали</h4>
+<ul>
+  <li><code>reclaimPolicy: Delete</code> (по умолчанию для динамических): удалили PVC — удалился диск с данными. <code>Retain</code> — диск остаётся.</li>
+  <li><code>volumeBindingMode: WaitForFirstConsumer</code>: диск создаётся после того, как scheduler выбрал узел. Иначе диск может появиться в зоне A, а под — оказаться в зоне B.</li>
+  <li>Облачный блочный диск привязан к зоне. Под с таким PVC можно перепланировать только в ту же зону.</li>
+  <li>PVC от <code>volumeClaimTemplates</code> StatefulSet <b>не удаляются</b> при удалении или масштабировании StatefulSet по умолчанию. Это защищает данные.</li>
+</ul>
+</section>
+
+<!-- ===================== 9 ===================== -->
+<section class="stage" id="s9" data-title="Конфигурация и безопасность">
+<h2><span class="num">09</span> Конфигурация и безопасность</h2>
+<p class="why">ConfigMap, Secret и RBAC спрашивают почти всегда. Также часто спрашивают, насколько секреты на самом деле секретны.</p>
+
+<h3>ConfigMap и Secret</h3>
+<p>Передаются в под как <b>переменные окружения</b> или как <b>файлы в томе</b>.</p>
+<ul>
+  <li><b>Secret — это base64, а не шифрование.</b> В etcd он по умолчанию лежит в открытом виде. Нужно настроить encryption at rest (EncryptionConfiguration, лучше с KMS), ограничить доступ через RBAC (право <code>list secrets</code> раскрывает все секреты namespace), использовать внешние хранилища: Vault, External Secrets Operator, Secrets Store CSI.</li>
+  <li>Secret в поде монтируется в tmpfs, то есть в память, а не на диск узла.</li>
+  <li>Размер ConfigMap или Secret — до 1 МиБ.</li>
+</ul>
+
+<h3>Аутентификация и авторизация</h3>
+<ul>
+  <li><b>Пользователей в Kubernetes нет как объектов.</b> Людей аутентифицируют снаружи: сертификаты, OIDC.</li>
+  <li><b>ServiceAccount</b> — учётная запись для процессов в подах. Под получает короткоживущий токен (projected, с аудиторией и сроком жизни), с которым ходит в API. Этот же токен используется для workload identity в облаках (IRSA, Workload Identity).</li>
+  <li><b>RBAC</b>: <code>Role</code> (права в namespace) или <code>ClusterRole</code> (права в кластере), связка через <code>RoleBinding</code> или <code>ClusterRoleBinding</code>. Правило: какие действия (get, list, watch, create, update, patch, delete) с какими ресурсами разрешены. <b>Права только разрешающие, запретов нет.</b> ClusterRole можно привязать через RoleBinding: тогда права действуют только в одном namespace.</li>
+  <li>Проверить права: <code>kubectl auth can-i delete pods --as=system:serviceaccount:ns:sa</code>.</li>
+</ul>
+
+<h3>Admission</h3>
+<p>Цепочка из этапа 3: mutating → validating. Механизмы политик: вебхуки (OPA Gatekeeper, Kyverno), встроенные <b>ValidatingAdmissionPolicy</b> на CEL без внешнего сервиса, <b>Pod Security Admission</b> с уровнями <code>privileged</code>, <code>baseline</code>, <code>restricted</code> через метки namespace. PSA заменил удалённые PodSecurityPolicy.</p>
+<div class="callout warn"><b>Риск вебхуков</b>Если admission-вебхук с <code>failurePolicy: Fail</code> недоступен, API отклоняет все подпадающие запросы. Можно заблокировать создание подов во всём кластере, включая поды самого вебхука. Исключайте системные namespace и следите за таймаутами.</div>
+
+<h3>Безопасность пода</h3>
+<p><code>securityContext</code>: <code>runAsNonRoot</code>, <code>readOnlyRootFilesystem</code>, <code>allowPrivilegeEscalation: false</code>, <code>capabilities.drop: [ALL]</code>, seccomp-профиль <code>RuntimeDefault</code>. Опасно: <code>privileged: true</code>, <code>hostPath</code>, <code>hostNetwork</code>, <code>hostPID</code>, токен ServiceAccount с широкими правами. На практике каждый из них означает путь к захвату узла.</p>
+</section>
+
+<!-- ===================== 10 ===================== -->
+<section class="stage" id="s10" data-title="Деплой и масштабирование">
+<h2><span class="num">10</span> Деплой, откат, масштабирование</h2>
+<p class="why">Как обновить без простоя и как кластер растёт под нагрузкой.</p>
+
+<h3>RollingUpdate в Deployment</h3>
+<ul>
+  <li><code>maxSurge</code> — сколько подов сверх <code>replicas</code> можно создать во время обновления (по умолчанию 25%).</li>
+  <li><code>maxUnavailable</code> — сколько подов могут быть недоступны (по умолчанию 25%). Оба параметра не могут быть 0 одновременно.</li>
+  <li>Новый RS масштабируется вверх, старый вниз. Шаг засчитывается, только когда новые поды <b>Ready</b>. Поэтому без readinessProbe rolling update «проходит» даже с нерабочей версией.</li>
+  <li><code>minReadySeconds</code> — сколько под должен простоять Ready, чтобы считаться доступным. <code>progressDeadlineSeconds</code> — после этого срока Deployment помечается как зависший, но <b>автоматического отката нет</b>.</li>
+  <li>Стратегия <code>Recreate</code>: сначала удалить все старые поды, потом создать новые. Простой есть, зато две версии не работают одновременно.</li>
+  <li>Откат: <code>kubectl rollout undo deployment/api</code> возвращает шаблон предыдущего RS. Статус: <code>kubectl rollout status</code>.</li>
+</ul>
+<p><b>Blue/green и canary</b> встроенным Deployment напрямую не реализуются. Варианты: два Deployment и переключение селектора Service; веса в Gateway API, Ingress или service mesh; Argo Rollouts или Flagger с автоматическим анализом метрик.</p>
+
+<h3>Автомасштабирование: три уровня</h3>
+<table>
+<tr><th>Что</th><th>Масштабирует</th><th>Как</th></tr>
+<tr><td><b>HPA</b></td><td>Число реплик</td><td><code>desired = ceil(current × текущая_метрика / целевая)</code>. Метрики: CPU и память (через metrics-server, <b>процент считается от requests</b>), custom и external (Prometheus Adapter, KEDA). Цикл около 15 с. Стабилизация scale-down по умолчанию 5 минут, чтобы реплики не скакали.</td></tr>
+<tr><td><b>VPA</b></td><td>requests и limits</td><td>Рекомендует или выставляет ресурсы по истории потребления. Не стоит использовать одновременно с HPA по той же метрике CPU или памяти.</td></tr>
+<tr><td><b>Cluster Autoscaler / Karpenter</b></td><td>Число узлов</td><td>Добавляет узлы, когда есть <b>Pending-поды, которые не помещаются</b> (не по загрузке CPU узлов!). Удаляет недогруженные узлы, если их поды можно переселить.</td></tr>
+</table>
+<div class="callout"><b>Цепочка при пике нагрузки</b>Растёт CPU → HPA увеличивает число реплик → новые поды не помещаются и висят в Pending → Cluster Autoscaler заказывает узел (минуты) → поды запускаются. Отсюда практики: запас ресурсов (overprovisioning с низким приоритетом), быстрый старт приложений, корректные requests.</div>
+<p><b>PodDisruptionBudget (PDB)</b> — «не больше N подов одновременно недоступны» (или «не меньше M доступны»). Защищает только от <b>добровольных</b> нарушений: drain, обновление узлов, autoscaler. От падения узла PDB не защищает.</p>
+</section>
+
+<!-- ===================== 11 ===================== -->
+<section class="stage" id="s11" data-title="Расширяемость: CRD и операторы">
+<h2><span class="num">11</span> Расширяемость: CRD, операторы, GitOps</h2>
+<p class="why">Показывает, что вы понимаете Kubernetes как платформу, а не как «запускалку контейнеров».</p>
+<ul>
+  <li><b>CRD</b> (CustomResourceDefinition) добавляет в API новый тип объектов, например <code>PostgresCluster</code>. API-сервер хранит такие объекты, валидирует по OpenAPI-схеме и раздаёт watch, как для встроенных типов.</li>
+  <li><b>Оператор</b> = CRD + свой контроллер, в который зашиты знания администратора: как развернуть кластер БД, сделать failover, бэкап, обновление. Работает по тому же циклу согласования. Примеры: CloudNativePG, Strimzi (Kafka), Prometheus Operator, cert-manager.</li>
+  <li><b>Finalizers</b> — метки в <code>metadata.finalizers</code>, которые не дают удалить объект, пока контроллер не выполнит очистку (например, удалит облачный балансировщик). Если контроллер мёртв, объект навсегда зависает в Terminating.</li>
+  <li><b>GitOps</b> (Argo CD, Flux): желаемое состояние лежит в Git, агент в кластере постоянно согласует кластер с репозиторием. Это тот же цикл согласования, поднятый на уровень выше. Ручные правки через <code>kubectl edit</code> будут отменены.</li>
+  <li><b>Helm</b> — шаблонизатор и менеджер релизов манифестов. <b>Kustomize</b> — наложение патчей без шаблонов, встроен в kubectl.</li>
+</ul>
+</section>
+
+<!-- ===================== 12 ===================== -->
+<section class="stage" id="s12" data-title="Kubernetes как распределённая система">
+<h2><span class="num">12</span> Kubernetes как распределённая система</h2>
+<p class="why">Вопросы про консенсус, кворум, отказ узлов и split brain отличают сильного кандидата. Здесь всё сходится вместе.</p>
+
+<h3>etcd, Raft и кворум</h3>
+<ul>
+  <li>Raft: один <b>лидер</b> принимает записи и реплицирует их фолловерам. Запись подтверждается, когда её сохранило <b>большинство</b> (кворум = ⌊n/2⌋ + 1).</li>
+  <li>3 узла переживают отказ 1, 5 узлов — отказ 2. Чётное число бессмысленно: 4 узла тоже переживают только 1 отказ, а кворум больше. Больше 5–7 узлов замедляют запись: нужно больше подтверждений.</li>
+  <li>При сетевом разделении сторона с меньшинством не может писать. Это защита от split brain. В терминах CAP etcd выбирает <b>согласованность (CP)</b>.</li>
+  <li>etcd чувствителен к задержке диска (fsync) и сети. Медленный диск приводит к перевыборам лидера и задержкам всего API. Для etcd нужны быстрые SSD и малые RTT между членами, обычно в пределах региона.</li>
+  <li>По умолчанию размер базы ограничен (квота около 2 ГиБ, рекомендуемый максимум 8 ГиБ). При превышении etcd переходит в режим «только чтение и удаление» (alarm NOSPACE). Нужны compaction и defrag. Множество объектов, например тысячи Events или старых ReplicaSet, раздувают базу.</li>
+  <li><b>Бэкап</b>: <code>etcdctl snapshot save</code>. Это и есть бэкап состояния кластера. Данные в PV туда не входят.</li>
+</ul>
+
+<h3>HA control plane</h3>
+<ul>
+  <li>API-серверы — несколько штук за балансировщиком, все активны: у них нет состояния.</li>
+  <li>Scheduler и controller-manager — несколько копий, но <b>активна одна</b>. Выбор лидера через объект <code>Lease</code>: лидер периодически продлевает аренду. Если перестал, после истечения срока лидерство берёт другая копия. Это защищает от двух одновременно действующих контроллеров.</li>
+  <li>Топологии: etcd на тех же узлах, что control plane (stacked), или отдельный кластер etcd (external).</li>
+</ul>
+
+<h3>Согласованность и асинхронность</h3>
+<ul>
+  <li>Запись в API строго согласована. Но <b>реакция системы асинхронна и в конечном счёте согласована (eventual consistency)</b>: контроллеры, kubelet и kube-proxy догоняют состояние с задержкой. В течение какого-то времени разные узлы видят разные Endpoints.</li>
+  <li>Кеши информеров могут отставать. Контроллеры обязаны быть идемпотентными и терпеть конфликты 409.</li>
+  <li>Отсутствие центрального «оркестратора команд» означает отсутствие единой точки, которая должна быть жива, чтобы приложения работали. Data plane (поды, правила сети) продолжает работать без control plane.</li>
+</ul>
+
+<h3>Отказ узла: хронология</h3>
+<ol class="steps">
+  <li>kubelet перестаёт обновлять Lease узла: сеть пропала, узел умер, kubelet завис.</li>
+  <li>Через <code>node-monitor-grace-period</code> (порядка 40–50 секунд, зависит от версии) Node controller ставит узлу <code>Ready=Unknown</code> и taint <code>node.kubernetes.io/unreachable:NoExecute</code>.</li>
+  <li>Поды по умолчанию имеют toleration к этому taint на 300 секунд. Через ~5 минут их помечают на удаление.</li>
+  <li>Поды Deployment и ReplicaSet пересоздаются на других узлах. <b>Итого около 5–6 минут</b> без реплик с этого узла. Для критичных сервисов toleration можно уменьшить, но рискуете лишними пересозданиями при сетевых «морганиях».</li>
+  <li>Поды <b>StatefulSet</b> автоматически не пересоздаются. Они висят в Terminating или Unknown, пока узел не вернётся, объект Node не удалят или не выполнят force delete. Причина: StatefulSet гарантирует не больше одного пода <code>db-0</code>. Kubernetes не знает, умер узел или просто отрезан сетью, а два <code>db-0</code> на одном диске — повреждение данных. Для явного подтверждения есть taint <code>node.kubernetes.io/out-of-service</code> (non-graceful node shutdown).</li>
+</ol>
+<div class="callout bad"><b>Split brain на уровне приложения</b>Если узел отрезан сетью, но жив, его контейнеры <b>продолжают работать</b>. kubelet не может узнать, что их «удалили». Deployment поднимет замены, и какое-то время будут работать обе копии. Для stateless-сервисов это допустимо. Для лидера, который пишет в общий ресурс, это опасно. Поэтому приложениям с единственным лидером нужен собственный механизм: fencing, Lease с проверкой, консенсус.</div>
+</section>
+
+<!-- ===================== 13 ===================== -->
+<section class="stage" id="s13" data-title="Сценарии «что будет, если…»">
+<h2><span class="num">13</span> Сценарии «что будет, если…»</h2>
+<p class="why">Именно так проверяют понимание. Сначала ответьте сами, потом раскройте ответ. Логика почти всегда одна: какой контроллер видит какое расхождение и что он делает.</p>
+
+<h3>Отказы компонентов</h3>
+<details class="scen"><summary>Упали все API-серверы</summary>
+<p>Работающие поды <b>продолжают работать</b>, Service работают: правила iptables остаются на узлах. kubelet продолжает локально перезапускать упавшие контейнеры. Но: не работает kubectl, не создаются и не планируются новые поды, не обновляются Endpoints (умерший под остаётся в балансировке), не работает HPA, не обрабатываются отказы узлов. Кластер «заморожен» в последнем состоянии. Data plane отделён от control plane.</p></details>
+<details class="scen"><summary>etcd потерял кворум (например, 2 из 3 узлов недоступны)</summary>
+<p>Записи невозможны. API-сервер отдаёт ошибки, в том числе на большую часть чтений: по умолчанию нужно строго согласованное чтение. Последствия такие же, как при падении API: нагрузки работают, изменения невозможны. Восстановление: вернуть узлы или восстановить кластер etcd из snapshot. Всё, что изменилось после snapshot, будет потеряно, и контроллеры начнут приводить мир к старому состоянию.</p></details>
+<details class="scen"><summary>Упал scheduler</summary>
+<p>Новые поды висят в <code>Pending</code> без узла. Уже назначенные поды работают. Масштабирование и деплой «застрянут» на этапе планирования. При HA лидерство возьмёт другая копия через Lease.</p></details>
+<details class="scen"><summary>Упал controller-manager</summary>
+<p>Ничего не согласуется: Deployment не создаёт ReplicaSet, удалённые поды не пересоздаются, отказы узлов не обрабатываются, Endpoints не обновляются, Job не создают поды, сборка мусора не идёт. Уже работающее продолжает работать.</p></details>
+<details class="scen"><summary>Остановился kubelet на одном узле</summary>
+<p>Контейнеры на узле <b>продолжают работать</b>: ими управляет containerd. Но статус не обновляется, пробы не выполняются. Через ~40–50 секунд узел станет NotReady, ещё через ~5 минут поды будут выселены и пересозданы в другом месте. Возможен период, когда старые копии ещё работают. Если поды остались в Endpoints, трафик может идти на них до того, как узел станет NotReady.</p></details>
+<details class="scen"><summary>Остановился kube-proxy на узле</summary>
+<p>Существующие правила остаются, поэтому трафик пока ходит. Но изменения Service и Endpoints на этом узле больше не применяются: поды этого узла могут слать запросы на уже удалённые IP. Деградация постепенная и трудно заметная.</p></details>
+<details class="scen"><summary>Упал CoreDNS</summary>
+<p>Новые разрешения имён внутри кластера перестают работать. Обращения по IP и уже закешированные соединения работают. Почти все сервисы ходят по именам, поэтому последствия заметные. CoreDNS обычно запускают в 2+ репликах и часто добавляют NodeLocal DNSCache.</p></details>
+<details class="scen"><summary>Сетевое разделение: часть узлов отрезана от control plane, но друг с другом связана</summary>
+<p>Поды на отрезанных узлах продолжают работать и обслуживать трафик, который до них доходит. Control plane считает узлы Unreachable и через ~5 минут пересоздаёт поды Deployment на доступных узлах. Получаются две копии. Поды StatefulSet не пересоздаются. Когда связь восстановится, kubelet увидит, что поды удалены, и остановит их.</p></details>
+
+<h3>Изменения объектов</h3>
+<details class="scen"><summary>Удалить под, которым управляет Deployment</summary>
+<p>ReplicaSet увидит 2 пода вместо 3 и создаст новый, с новым именем и новым IP. Удаление пода — обычный способ «перезапустить» его.</p></details>
+<details class="scen"><summary>Удалить ReplicaSet, которым управляет Deployment</summary>
+<p>Сборщик мусора удалит его поды, Deployment создаст новый RS с тем же шаблоном, тот создаст поды. Будет короткий простой. Удаление с <code>--cascade=orphan</code> оставит поды, а новый RS «усыновит» их по меткам.</p></details>
+<details class="scen"><summary>Изменить метку пода так, чтобы она перестала совпадать с селектором ReplicaSet</summary>
+<p>Под перестаёт быть «своим»: ReplicaSet создаст замену, а изменённый под останется работать сам по себе и выпадет из Service. Это известный приём отладки: вывести под из ротации, не убивая его, чтобы исследовать.</p></details>
+<details class="scen"><summary>Изменить selector у Deployment</summary>
+<p>В <code>apps/v1</code> селектор неизменяем: API вернёт ошибку. Нужно пересоздать Deployment.</p></details>
+<details class="scen"><summary>Изменить образ в Deployment</summary>
+<p>Меняется шаблон пода → новый хеш → новый ReplicaSet → rolling update по maxSurge и maxUnavailable. Изменение только <code>replicas</code> шаблон не меняет и нового RS не создаёт.</p></details>
+<details class="scen"><summary>Изменить ConfigMap, который использует приложение</summary>
+<p>Поды <b>не перезапускаются</b>. Переменные окружения не обновятся до перезапуска пода. Файлы в смонтированном томе обновятся через некоторое время (обычно до минуты, синхронизация kubelet и кеш), но приложение должно само их перечитать. При монтировании через <code>subPath</code> файл не обновится никогда. Практика: <code>kubectl rollout restart</code>, аннотация с хешем конфига в шаблоне пода (паттерн Helm) или неизменяемые ConfigMap с версией в имени.</p></details>
+<details class="scen"><summary>Вручную изменить replicas, когда настроен HPA</summary>
+<p>HPA на следующем цикле вернёт своё значение. Под управлением HPA нельзя задавать <code>replicas</code> в манифесте GitOps: иначе GitOps и HPA будут спорить. Поле убирают из манифеста.</p></details>
+<details class="scen"><summary>Сделать <code>kubectl edit</code> ресурса, которым управляет Argo CD или Flux</summary>
+<p>Правку откатят при следующей синхронизации (если включён self-heal), либо приложение будет показано как OutOfSync. Правильный путь — коммит в Git.</p></details>
+<details class="scen"><summary>Указать requests больше, чем есть у любого узла</summary>
+<p>Под навсегда <code>Pending</code>, событие <code>FailedScheduling: Insufficient cpu</code>. Cluster Autoscaler тоже не поможет, если ни один тип узлов в группах не подходит.</p></details>
+<details class="scen"><summary>Убрать readinessProbe</summary>
+<p>Под считается Ready сразу после старта контейнера. Трафик пойдёт до того, как приложение прогрелось. При rolling update старые поды удалятся, даже если новая версия не работает: простой и ошибки.</p></details>
+<details class="scen"><summary>Поставить слишком агрессивную livenessProbe (маленький timeout, без startupProbe)</summary>
+<p>При медленном старте или GC-паузе под убивается до того, как станет готов → CrashLoopBackOff. Под нагрузкой убиваются перегруженные поды, нагрузка падает на остальные, и они тоже начинают падать.</p></details>
+<details class="scen"><summary>Контейнер превысил memory limit</summary>
+<p>Ядро убивает процесс, статус <code>OOMKilled</code>, exit code 137, kubelet перезапускает контейнер на том же узле. Если это повторяется — CrashLoopBackOff. Под не переезжает и не выселяется.</p></details>
+<details class="scen"><summary>На узле закончилось место на диске</summary>
+<p>kubelet ставит условие <code>DiskPressure</code> и taint, сначала чистит неиспользуемые образы и мёртвые контейнеры, затем выселяет поды (начиная с BestEffort). Поды получают статус <code>Evicted</code>, контроллеры пересоздают их на других узлах.</p></details>
+<details class="scen"><summary><code>kubectl drain</code> узла, а у сервиса PDB <code>minAvailable</code> равен числу реплик</summary>
+<p>Drain зависнет: Eviction API будет отказывать (429), потому что любое выселение нарушит бюджет. То же самое, если реплика одна, а <code>maxUnavailable: 0</code>. Это частая причина зависших обновлений узлов.</p></details>
+<details class="scen"><summary>Удалить namespace</summary>
+<p>Удаляется всё внутри: поды, сервисы, секреты, PVC (а значит и диски при <code>reclaimPolicy: Delete</code>). Если внутри есть объекты с финализаторами, контроллер которых уже удалён, namespace зависнет в <code>Terminating</code>.</p></details>
+<details class="scen"><summary>Объект застрял в Terminating</summary>
+<p>Почти всегда виноват финализатор, который никто не снимает. У пода причиной может быть недоступный узел (kubelet не подтверждает удаление). Решение: починить контроллер или узел. Крайний вариант: снять финализатор вручную или выполнить <code>--force --grace-period=0</code>, понимая риски (неочищенные внешние ресурсы, две копии пода StatefulSet).</p></details>
+<details class="scen"><summary>Использовать тег <code>:latest</code></summary>
+<p>Для <code>:latest</code> imagePullPolicy по умолчанию <code>Always</code>, для других тегов <code>IfNotPresent</code>. Разные узлы могут запустить разные фактические версии. Деплой не произойдёт при пуше нового <code>latest</code>: шаблон не изменился. Откат бессмыслен. Используйте неизменяемые теги или digest.</p></details>
+<details class="scen"><summary>Под StatefulSet с PVC на RWO-диске пытается запуститься на другом узле</summary>
+<p>Пока диск подключён к старому узлу, будет ошибка <code>Multi-Attach error</code>. Если диск в другой зоне — <code>Pending</code> из-за volume node affinity. Поэтому для StatefulSet важно распределение по зонам и понимание, что под «привязан» к зоне своего диска.</p></details>
+<details class="scen"><summary>Сервис есть, но запросы к нему не проходят</summary>
+<p>Проверка по цепочке: совпадает ли selector Service с метками подов (<code>kubectl get endpointslices</code> — пусто?), готовы ли поды (readiness), правильный ли <code>targetPort</code>, слушает ли приложение <code>0.0.0.0</code>, а не <code>127.0.0.1</code>, нет ли NetworkPolicy, резолвится ли DNS.</p></details>
+</section>
+
+<!-- ===================== 14 ===================== -->
+<section class="stage" id="s14" data-title="Диагностика и отладка">
+<h2><span class="num">14</span> Диагностика: алгоритм и команды</h2>
+<p class="why">Часто дают задачу «под не стартует, что будешь делать». Ответ должен быть последовательным.</p>
+
+<h3>Алгоритм</h3>
+<ol class="steps">
+  <li><code>kubectl get pods -o wide</code> — статус, рестарты, узел.</li>
+  <li><code>kubectl describe pod &lt;name&gt;</code> — <b>Events внизу</b>: ошибки планирования, скачивания образа, проб, монтирования томов. Это самый информативный шаг.</li>
+  <li><code>kubectl logs &lt;pod&gt; [-c container] [--previous]</code> — <code>--previous</code> показывает логи предыдущего упавшего контейнера.</li>
+  <li><code>kubectl get events --sort-by=.lastTimestamp -n ns</code>.</li>
+  <li><code>kubectl exec -it</code> или <code>kubectl debug</code> (эфемерный отладочный контейнер, полезно для distroless-образов).</li>
+  <li>Узел: <code>kubectl describe node</code> (Conditions, Allocated resources), <code>kubectl top</code>.</li>
+</ol>
+
+<h3>Статус → причина</h3>
+<table>
+<tr><th>Статус</th><th>Куда смотреть</th></tr>
+<tr><td><code>Pending</code></td><td>Не хватает ресурсов по requests, taint без toleration, affinity, не создаётся PVC, квота</td></tr>
+<tr><td><code>ImagePullBackOff</code> / <code>ErrImagePull</code></td><td>Опечатка в образе или теге, нет доступа к registry (<code>imagePullSecrets</code>), rate limit</td></tr>
+<tr><td><code>CrashLoopBackOff</code></td><td>Приложение падает при старте: <code>logs --previous</code>, конфиг, отсутствующий секрет, неверная команда, liveness</td></tr>
+<tr><td><code>OOMKilled</code></td><td>Лимит памяти мал или утечка. Для JVM: размер heap относительно лимита</td></tr>
+<tr><td><code>CreateContainerConfigError</code></td><td>Нет ConfigMap или Secret, на который ссылается под</td></tr>
+<tr><td><code>Running</code>, но <code>0/1 Ready</code></td><td>Не проходит readinessProbe</td></tr>
+<tr><td><code>Evicted</code></td><td>Давление ресурсов на узле</td></tr>
+<tr><td><code>Terminating</code> навсегда</td><td>Финализаторы, недоступный узел</td></tr>
+</table>
+
+<h3>Полезные команды</h3>
+<pre><code>kubectl explain deployment.spec.strategy        # документация по полям
+kubectl get deploy api -o yaml                  # фактический объект
+kubectl rollout status|history|undo deploy/api
+kubectl rollout restart deploy/api              # пересоздать поды
+kubectl scale deploy/api --replicas=5
+kubectl port-forward svc/api 8080:80
+kubectl auth can-i list secrets -n prod
+kubectl get endpointslices -l kubernetes.io/service-name=api
+kubectl cordon|uncordon|drain node-1 --ignore-daemonsets
+kubectl top pods --containers</code></pre>
+</section>
+
+<!-- ===================== 15 ===================== -->
+<section class="stage" id="s15" data-title="Эксплуатация и экосистема">
+<h2><span class="num">15</span> Эксплуатация и экосистема</h2>
+<p class="why">Короткий обзор, чтобы поддержать разговор о продакшене.</p>
+<ul>
+  <li><b>Обновление кластера</b>: сначала control plane, затем узлы. Kubelet может отставать от API-сервера на несколько минорных версий, но не опережать его. Минорные версии обновляют по одной. Узлы обновляют через cordon → drain → обновление → uncordon или заменой групп узлов.</li>
+  <li><b>Наблюдаемость</b>: Prometheus (метрики, kube-state-metrics, node-exporter), Grafana, логи через DaemonSet-агент (Fluent Bit, Vector) в Loki или Elasticsearch, трейсы через OpenTelemetry.</li>
+  <li><b>Service mesh</b> (Istio, Linkerd, Cilium): mTLS между сервисами, ретраи, таймауты, балансировка L7, канарейки, телеметрия. Ценой дополнительной сложности и задержки.</li>
+  <li><b>Managed-кластеры</b> (EKS, GKE, AKS, Yandex Managed Kubernetes): провайдер управляет control plane и etcd, вы управляете узлами и нагрузками.</li>
+  <li><b>Мультиарендность</b>: namespace + RBAC + ResourceQuota + NetworkPolicy + Pod Security. Для жёсткой изоляции — отдельные кластеры или узлы.</li>
+  <li><b>Лимиты масштаба</b> (ориентиры из документации): до ~5000 узлов, ~110 подов на узел по умолчанию, ~150 000 подов в кластере.</li>
+</ul>
+</section>
+
+<!-- ===================== 16 ===================== -->
+<section class="stage" id="s16" data-title="Самопроверка">
+<h2><span class="num">16</span> Самопроверка: вопросы с собеседований</h2>
+<p class="why">Ответьте вслух, затем раскройте. Если ответ не складывается в 2–3 фразы, вернитесь к соответствующему этапу.</p>
+
+<details><summary>Чем Pod отличается от контейнера? Зачем несколько контейнеров в поде?</summary><p>Pod — группа контейнеров с общей сетью и томами, всегда на одном узле, минимальная единица планирования. Несколько контейнеров нужны для тесно связанных процессов: sidecar-прокси, сборщик логов, init-подготовка. Независимые сервисы — в разные поды.</p></details>
+<details><summary>Чем Deployment отличается от StatefulSet и DaemonSet?</summary><p>Deployment — взаимозаменяемые реплики. StatefulSet — стабильные имена, DNS и свой том у каждой реплики, упорядоченность, не больше одного экземпляра на идентичность. DaemonSet — по поду на узел.</p></details>
+<details><summary>Как работает Service, если ClusterIP никто не слушает?</summary><p>kube-proxy на каждом узле создаёт правила iptables, IPVS или nftables, которые DNAT-ят пакеты с ClusterIP на IP подов из EndpointSlice. Перехват происходит на узле отправителя.</p></details>
+<details><summary>Liveness и readiness: разница?</summary><p>Провал liveness — перезапуск контейнера. Провал readiness — исключение из Endpoints без перезапуска. Startup откладывает обе пробы до успешного старта.</p></details>
+<details><summary>requests и limits, что будет при превышении?</summary><p>requests нужны для планирования и гарантий. При превышении CPU limit — троттлинг, при превышении memory limit — OOMKill. Классы QoS определяют порядок вытеснения.</p></details>
+<details><summary>Почему под в Pending?</summary><p>Нет узла с достаточными свободными requests, taint без toleration, неподходящие affinity или nodeSelector, PVC не привязался, ограничение квоты. Смотреть Events в <code>describe</code>.</p></details>
+<details><summary>Что хранится в etcd и почему его кластер нечётного размера?</summary><p>Всё состояние объектов кластера. Raft требует кворум ⌊n/2⌋+1. Нечётное число даёт максимальную отказоустойчивость на узел: 3 → 1 отказ, 5 → 2.</p></details>
+<details><summary>Как обеспечить zero-downtime деплой?</summary><p>RollingUpdate с <code>maxUnavailable: 0</code> или небольшим значением, корректная readinessProbe, preStop sleep и обработка SIGTERM, достаточный terminationGracePeriod, несколько реплик, PDB, распределение по узлам и зонам, обратно совместимые миграции БД.</p></details>
+<details><summary>Как приложение в поде получает доступ к облачному API без статических ключей?</summary><p>Через ServiceAccount и workload identity: projected-токен SA обменивается у провайдера на временные облачные учётные данные (IRSA, GKE Workload Identity).</p></details>
+<details><summary>Как ограничить сетевой доступ между сервисами?</summary><p>NetworkPolicy (при поддержке CNI): default-deny и явные разрешения по меткам и namespace. Для L7 и mTLS — service mesh или политики Cilium.</p></details>
+<details><summary>Что такое оператор и зачем он нужен?</summary><p>CRD плюс контроллер, который автоматизирует эксплуатацию сложного, обычно stateful, приложения по модели согласования: развёртывание, failover, бэкапы, обновления.</p></details>
+<details><summary>Почему Kubernetes называют level-triggered и почему это важно?</summary><p>Контроллеры реагируют на текущее состояние, а не на конкретное событие. Пропущенное событие, рестарт или сбой не ломают систему: при следующем цикле расхождение будет найдено и исправлено.</p></details>
+<details><summary>Что происходит при отказе узла и сколько это длится?</summary><p>~40–50 с до NotReady, ещё 300 с toleration до выселения, затем пересоздание подов Deployment. Около 5–6 минут. Поды StatefulSet требуют подтверждения, что узел мёртв.</p></details>
+<details><summary>Как HPA вычисляет число реплик? Почему без requests не работает?</summary><p><code>ceil(текущие_реплики × текущая/целевая)</code>. Утилизация CPU считается в процентах от requests: без requests процент не определён.</p></details>
+<details><summary>Secret защищён?</summary><p>По умолчанию нет: base64 и открытый вид в etcd. Нужны encryption at rest с KMS, строгий RBAC, по возможности внешнее хранилище секретов.</p></details>
+<details><summary>Как два компонента контроллера не выполняют работу одновременно?</summary><p>Выбор лидера через Lease с периодическим продлением. Изменения объектов защищены оптимистической блокировкой через resourceVersion.</p></details>
+<details><summary>Ingress и Gateway API?</summary><p>Оба описывают L7-входящий трафик, реализуются контроллером. Gateway API — новее, с разделением ролей (GatewayClass, Gateway, Route), весами, большим числом протоколов и переносимыми расширениями.</p></details>
+<details><summary>Что будет с подами, если упадёт весь control plane?</summary><p>Продолжат работать. Kubelet перезапускает упавшие контейнеры локально, сеть работает по уже настроенным правилам. Не будет изменений, планирования, реакции на отказы и обновления Endpoints.</p></details>
+</section>
+
+<!-- ===================== 17 ===================== -->
+<section class="stage" id="s17" data-title="Шпаргалка перед входом">
+<h2><span class="num">17</span> Шпаргалка за 5 минут до собеседования</h2>
+<div class="grid2">
+  <div class="card"><h4>Модель</h4><p>Desired state в etcd → контроллеры через watch → reconcile. Level-triggered, идемпотентно, всё через API-сервер.</p></div>
+  <div class="card"><h4>Control plane</h4><p>apiserver (вход, authn/authz/admission, единственный доступ к etcd), etcd (Raft, кворум), scheduler (filter → score → bind), controller-manager (циклы согласования, leader election).</p></div>
+  <div class="card"><h4>Узел</h4><p>kubelet (поды через CRI, пробы, статус, Lease), runtime (containerd), kube-proxy (правила Service), CNI (IP подов), CSI (диски).</p></div>
+  <div class="card"><h4>Цифры</h4><p>Grace period 30 с. Отказ узла ~40–50 с + 300 с. maxSurge и maxUnavailable 25%. NodePort 30000–32767. Backoff до 5 мин. Кворум ⌊n/2⌋+1. OOM = exit 137.</p></div>
+  <div class="card"><h4>Пробы</h4><p>liveness → рестарт. readiness → из Endpoints. startup → защищает медленный старт.</p></div>
+  <div class="card"><h4>Ресурсы</h4><p>requests → планирование. CPU limit → троттлинг. Memory limit → OOMKill. QoS: Guaranteed / Burstable / BestEffort.</p></div>
+  <div class="card"><h4>Сеть</h4><p>IP на под, без NAT. Service = виртуальный IP + DNAT. Headless → IP подов. Ingress / Gateway → L7. NetworkPolicy по умолчанию всё разрешает.</p></div>
+  <div class="card"><h4>Распределённость</h4><p>CP-хранилище, eventual consistency реакций, data plane живёт без control plane, при разделении сети возможны дубли, StatefulSet ждёт подтверждения.</p></div>
+</div>
+<div class="callout ok"><b>Как отвечать на «что будет, если…»</b>1) Какой объект изменился или какой компонент отказал. 2) Какой контроллер это видит. 3) Какое расхождение желаемого и фактического он обнаружит и что сделает. 4) Что продолжит работать (data plane) и что остановится (control plane). 5) Как это заметить и починить.</div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var KEY='k8s-guide-done', done={};
+  try{ done=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ done={}; }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(done)); }catch(e){} }
+  var stages=[].slice.call(document.querySelectorAll('section.stage'));
+  var list=document.getElementById('tocList');
+  stages.forEach(function(s,i){
+    var li=document.createElement('li'), a=document.createElement('a');
+    a.href='#'+s.id; a.id='toc-'+s.id;
+    a.innerHTML='<span class="n">'+String(i+1).padStart(2,'0')+'</span><span class="t"></span>';
+    a.querySelector('.t').textContent=s.dataset.title;
+    li.appendChild(a); list.appendChild(li);
+    var lab=document.createElement('label'); lab.className='stage-done';
+    var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!done[s.id];
+    lab.appendChild(cb); lab.appendChild(document.createTextNode(' Этап изучен'));
+    s.appendChild(lab);
+    cb.addEventListener('change',function(){ done[s.id]=cb.checked; save(); render(); });
+  });
+  function render(){
+    var n=0;
+    stages.forEach(function(s){ var on=!!done[s.id]; if(on)n++; document.getElementById('toc-'+s.id).classList.toggle('done',on); });
+    document.getElementById('progText').textContent='Пройдено '+n+' из '+stages.length;
+    document.getElementById('progBar').style.width=(100*n/stages.length)+'%';
+  }
+  render();
+  var root=document.documentElement, TK='k8s-guide-theme';
+  try{ var t=localStorage.getItem(TK); if(t) root.setAttribute('data-theme',t); }catch(e){}
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var next=cur==='dark'?'light':'dark'; root.setAttribute('data-theme',next);
+    try{ localStorage.setItem(TK,next); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
